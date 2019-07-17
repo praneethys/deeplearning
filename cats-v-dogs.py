@@ -48,6 +48,8 @@ def set_dir_paths(rootdir):
   global TRAINING_DOGS_DIR
   global TESTING_DOGS_DIR
 
+  print("Dataset is at rootdir:", rootdir)
+  
   DOWNLOAD_ZIP      = os.path.join(rootdir, "cats_and_dogs.zip")
   CAT_SOURCE_DIR    = os.path.join(rootdir, "PetImages/Cat")
   TRAINING_DIR      = os.path.join(rootdir, "cats-v-dogs/training")
@@ -64,7 +66,7 @@ def download_dataset():
   """
   os.system("python -m wget https://download.microsoft.com/download/3/E/1/3E1C3F21-ECDB-4869-8368-6DEBA77B919F/kagglecatsanddogs_3367a.zip -o" + DOWNLOAD_ZIP)
 
-def extract_dataset():
+def extract_dataset(DIR):
   """
   Extract dataset
   """
@@ -73,7 +75,7 @@ def extract_dataset():
   zip_ref.extractall(DIR)
   zip_ref.close()
 
-def create_dirs():
+def create_dirs(DIR):
   """
   Create directories for training and testing datasets
   """
@@ -160,7 +162,7 @@ def create_training_generator(augment_img):
 
   train_generator = train_datagen.flow_from_directory(TRAINING_DIR, 
                                                       target_size=(150,150),
-                                                      batch_size=100,
+                                                      batch_size=128,
                                                       class_mode='binary')
   return train_generator
 
@@ -172,7 +174,7 @@ def create_validation_generator():
   validation_datagen = ImageDataGenerator(rescale=1./255.)
   validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, 
                                                                 target_size=(150,150),
-                                                                batch_size=100,
+                                                                batch_size=128,
                                                                 class_mode='binary')
 
   return validation_generator
@@ -183,10 +185,10 @@ def train_nn(model, train_generator, validation_generator):
   """
   myCallback = MyCallback()
   history = model.fit_generator(train_generator,
-                              steps_per_epoch=100,  # no. of images = batch_size * steps
-                              epochs=1,
+                              # steps_per_epoch=250,  # no. of images = batch_size * steps
+                              epochs=100,
                               validation_data=validation_generator,
-                              validation_steps=50,  # no. of images = batch_size * steps
+                              # validation_steps=86,  # no. of images = batch_size * steps
                               verbose=1,
                               callbacks=[myCallback]
                               )
@@ -248,8 +250,8 @@ def main():
 
   if args.setup_dataset:
     download_dataset()
-    extract_dataset()
-    create_dirs()
+    extract_dataset(args.setup_dir)
+    create_dirs(args.setup_dir)
 
     split_data(CAT_SOURCE_DIR, TRAINING_CATS_DIR, TESTING_CATS_DIR, SPLIT_SIZE)
     split_data(DOG_SOURCE_DIR, TRAINING_DOGS_DIR, TESTING_DOGS_DIR, SPLIT_SIZE)
